@@ -1,0 +1,61 @@
+/* Стили относятся только к реестру партнёров. */
+#partnersView { min-width: 0; }
+#partnersView .tool-actions { max-width: 360px; }
+.partners-notice { display: flex; align-items: start; justify-content: space-between; gap: 28px; margin: 20px 0; color: #526073; font-size: 13px; }
+.partners-notice p { max-width: 830px; margin: 0; }
+#partnerSaveStatus { flex-shrink: 0; max-width: 250px; color: var(--green); font-weight: 650; }
+#partnerSaveStatus.is-error { color: #a62b36; }
+.partners-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 24px 0 12px; }
+#partnerCount { color: var(--muted); font-size: 13px; }
+#clearPartners { margin-left: auto; color: var(--muted); }
+.partners-table-hint, .partners-export-note { color: var(--muted); font-size: 13px; }
+.partners-scroll { max-height: 72vh; overflow: auto; border: 1px solid var(--line); border-radius: 16px; background: #fff; scrollbar-gutter: stable; }
+.partners-table { width: 3060px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 14px; }
+.partners-table th { position: sticky; top: 0; z-index: 3; width: 280px; padding: 18px 14px; border-right: 1px solid #d1dbe7; border-bottom: 1px solid #c5d0df; background: #e9eff7; color: var(--navy); text-align: left; font-size: 13px; line-height: 1.4; vertical-align: bottom; }
+.partners-table th.partner-col-check { width: 148px; text-align: center; }
+.partners-table th.partner-col-types, .partners-table th.partner-col-status { width: 225px; }
+.partners-table td { padding: 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fff; vertical-align: top; }
+.partners-table tr:nth-child(even) td { background: #f7f9fc; }
+.partners-table th:first-child, .partners-table td:first-child { position: sticky; left: 0; z-index: 2; width: 265px; box-shadow: 4px 0 7px rgba(11,23,52,.04); }
+.partners-table th:first-child { z-index: 4; }
+.partners-table tr:last-child td { border-bottom: 0; }
+.partners-table textarea, .partners-table select { display: block; width: 100%; min-height: 44px; padding: 10px; border: 1px solid #c5cfdd; border-radius: 8px; font: inherit; color: var(--navy); background: #fff; }
+.partners-table textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+.partners-table textarea::placeholder { color: #7b8492; }
+.partners-table :is(textarea, select, summary, button):focus-visible, .partners-scroll:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.partners-table input[type="checkbox"] { width: 19px; height: 19px; flex-shrink: 0; margin: 0; accent-color: var(--red); cursor: pointer; }
+.partner-check { min-height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.partner-types summary { min-height: 44px; padding: 10px; border: 1px solid #c5cfdd; border-radius: 8px; background: #fff; cursor: pointer; overflow-wrap: anywhere; }
+.partner-type-options { display: grid; gap: 4px; padding-top: 8px; }
+.partner-type-options label { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 5px 2px; font-size: 13px; cursor: pointer; }
+.partner-row-number { display: block; margin: 0 0 6px; color: var(--muted); font-size: 11px; font-weight: 650; }
+.partner-row-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+.partner-row-actions .text-button { min-height: 36px; font-size: 12px; }
+.partner-row-actions .partner-delete { color: #8a4453; }
+.partner-expand { display: none; }
+.partners-undo, .partners-warning { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 14px 0; padding: 14px 18px; border-radius: 12px; background: #eaf2f8; font-size: 14px; }
+.partners-warning { border: 1px solid #e7c693; background: #fff5e5; color: #755012; }
+#exportPartners:disabled { opacity: .55; cursor: default; transform: none; }
+.partners-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) {
+  #partnersView .tool-actions { max-width: none; }
+  .partners-notice { display: block; }
+  #partnerSaveStatus { display: block; max-width: none; margin-top: 10px; }
+  .partners-table-hint { display: none; }
+  .partners-scroll { max-height: none; overflow: visible; border: 0; background: transparent; }
+  .partners-table, .partners-table tbody { display: block; width: 100%; }
+  .partners-table thead { display: none; }
+  .partners-table tr { display: block; margin-bottom: 14px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+  .partners-table td, .partners-table td:first-child, .partners-table tr:nth-child(even) td { position: static; display: none; width: 100%; padding: 10px; border: 0; background: #fff; box-shadow: none; }
+  .partners-table td:first-child, .partners-table tr.is-expanded td { display: block; }
+  .partners-table td::before { content: attr(data-label); display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+  .partners-table td:first-child::before { display: none; }
+  .partners-table tr.is-expanded td.partner-cell-check { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+  .partners-table td.partner-cell-check::before { margin: 0; }
+  .partners-table textarea, .partners-table select { font-size: 16px; }
+  .partner-check { min-width: 44px; }
+  .partner-expand { display: inline-flex; align-items: center; }
+  .partner-row-actions .text-button { min-height: 44px; font-size: 13px; }
+  .partners-toolbar { gap: 12px; }
+  #clearPartners { min-height: 44px; }
+}
