@@ -1,0 +1,86 @@
+"""Extract the four existing stage DOCX files into offline checklist data.
+
+Uses only the Python standard library. Original DOCX files are never changed.
+Run from any directory: python scripts/build-checklists.py
+"""
+from pathlib import Path
+from hashlib import sha256
+import json
+import re
+from zipfile import ZipFile
+from xml.etree import ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+SITE = ROOT / "public/prototype" if (ROOT / "public/prototype").is_dir() else ROOT
+NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+DEFINITIONS = [
+    ("venue-selection", "Выбор площадки", "При осмотре и согласовании площадки", "venue_selection", "venue_checklist", 38),
+    ("venue-preparation", "Подготовка помещения", "При подготовке пространства и рабочих зон", "final_preparation", "venue_preparation_checklist", 22),
+    ("equipment", "Материалы и оборудование", "При сборе материалов и настройке техники на месте", "final_preparation", "equipment_checklist", 55),
+    ("final-check", "Финальная проверка", "Накануне, утром и за 10–15 минут до начала", "final_preparation", "final_check", 52),
+]
+# Editorial clarifications of what a tick means; keep sourceText for traceability.
+CLARIFICATIONS = {
+    "уровень шума (ремонт, репетиции, соседние мероприятия);": "Оценён уровень шума: ремонт, репетиции, соседние мероприятия.",
+    "запреты на фото/видео;": "Ограничения на фото и видео выяснены и учтены.",
+    "правила размещения навигации, флипчартов и материалов;": "Правила размещения навигации, флипчартов и материалов выяснены и учтены.",
+    "ограничения по перемещению мебели;": "Ограничения по перемещению мебели выяснены и учтены.",
+    "ограничение по количеству людей в зале;": "Уточнено допустимое количество людей в зале.",
+    "возможность включить/отключить климат-систему по запросу;": "Уточнено, можно ли включить или отключить климат-систему по запросу.",
+}
+
+
+def stable_id(*parts):
+    return "c_" + sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
+def extract(definition):
+    identifier, title, when, stage, key, count = definition
+    relative = f"materials/docs/stages/{stage}/{key}.docx"
+    with ZipFile(SITE / relative) as archive:
+        root = ET.fromstring(archive.read("word/document.xml"))
+        styles = ET.fromstring(archive.read("word/styles.xml"))
+        style_names = {s.get("{" + NS["w"] + "}styleId"): s.find("w:name", NS).get("{" + NS["w"] + "}val", "") for s in styles.findall("w:style", NS) if s.find("w:name", NS) is not None}
+    sections = []
+    section = group = None
+    for paragraph in root.findall("w:body/w:p", NS):
+        text = "".join(t.text or "" for t in paragraph.findall(".//w:t", NS))
+        text = text.strip()
+        if not text:
+            continue
+        style = paragraph.find("w:pPr/w:pStyle", NS)
+        style = style_names.get(style.get("{" + NS["w"] + "}val", ""), "").lower() if style is not None else ""
+        if style.startswith("heading") or text.startswith("Чек-лист"):
+            continue
+        if style == "list paragraph":
+            if section is None:
+                raise ValueError(f"Item has no section: {relative}: {text}")
+            if group is None:
+                group = {"id": stable_id(identifier, section["id"], "items"), "title": "", "items": []}
+                section["groups"].append(group)
+            display = CLARIFICATIONS.get(text, text) if identifier == "venue-selection" else text
+            group["items"].append({"id": stable_id(identifier, section["id"], group["id"], text), "text": display, "sourceText": text})
+            continue
+        new_section = identifier in ("venue-selection", "venue-preparation")
+        new_section |= identifier == "equipment" and bool(re.match(r"\d+\.", text))
+        new_section |= identifier == "final-check" and bool(re.match(r"[IVX]+\.", text))
+        if new_section:
+            section = {"id": stable_id(identifier, text), "title": text, "groups": []}
+            sections.append(section)
+            group = None
+        else:
+            if section is None:
+                raise ValueError(f"Group has no section: {relative}: {text}")
+            group = {"id": stable_id(identifier, section["id"], text), "title": text, "items": []}
+            section["groups"].append(group)
+    actual = sum(len(g["items"]) for s in sections for g in s["groups"])
+    if actual != count:
+        raise ValueError(f"Check changed source before publishing: {identifier}: {actual} items, expected {count}")
+    return {"id": identifier, "title": title, "when": when, "stageId": stage, "materialKey": key, "docx": relative, "sections": sections}
+
+
+if __name__ == "__main__":
+    payload = json.dumps([extract(d) for d in DEFINITIONS], ensure_ascii=False, indent=2) + "\n"
+    (SITE / "data/checklists.json").write_text(payload, encoding="utf-8")
+    (SITE / "data/checklists-data.js").write_text("// Generated by scripts/build-checklists.py from original stage DOCX files.\nwindow.DELAI_CHECKLISTS_DATA = " + payload.rstrip() + ";\n", encoding="utf-8")
+    print("Built 4 checklists: 38 + 22 + 55 + 52 = 167 items. Original DOCX files unchanged.")
